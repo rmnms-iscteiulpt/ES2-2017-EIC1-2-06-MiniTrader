@@ -1,7 +1,7 @@
 # ES2-2017-EIC1-2-06-MiniTrader
 Student Name | Student Number 
 ------------ | -------------
-Débora Contente | 3423423
+Débora Contente | 60144
 Carlota Rodrigues | 61172
 Rodrigo Martins | 64972
 
