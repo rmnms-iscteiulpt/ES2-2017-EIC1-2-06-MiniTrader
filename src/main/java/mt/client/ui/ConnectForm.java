@@ -33,7 +33,7 @@ public class ConnectForm extends javax.swing.JDialog {
 		connectBtn = new javax.swing.JButton();
 		cancelBtn = new javax.swing.JButton();
 
-		setTitle("Connect!!!!");
+		setTitle("Connect!!!!!!!!");
 		setResizable(false);
 
 		hostLabel.setText("Host:");
