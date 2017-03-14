@@ -40,7 +40,7 @@ public class ConnectForm extends javax.swing.JDialog {
 
 		niknameLabel.setText("Nickname:");
 
-		connectBtn.setText("Connect");
+		connectBtn.setText("Connect!!!");
 		connectBtn.addActionListener(new java.awt.event.ActionListener() {
 			public void actionPerformed(java.awt.event.ActionEvent evt) {
 				connectBtnActionPerformed(evt);
