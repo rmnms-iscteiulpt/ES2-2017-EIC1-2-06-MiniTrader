@@ -12,7 +12,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-
+import javax.swing.JOptionPane;
 import mt.Order;
 import mt.comm.ServerComm;
 import mt.comm.ServerSideMessage;
@@ -60,6 +60,10 @@ public class MicroServer implements MicroTraderServer {
 	/** The value is {@value #EMPTY} */
 	public static final int EMPTY = 0;
 
+	
+	
+	
+	
 	/**
 	 * Constructor
 	 */
@@ -100,11 +104,28 @@ public class MicroServer implements MicroTraderServer {
 				case NEW_ORDER:
 					try {
 						verifyUserConnected(msg);
-						if(msg.getOrder().getServerOrderID() == EMPTY){
-							msg.getOrder().setServerOrderID(id++);
+						Order o = msg.getOrder();
+						//BR2: Sellers cannot have more than five sell orders unfulfilled at any time;
+						if(o.isSellOrder() && checkNumberOfUnfulfilledSellOrders(o.getNickname()) > 5)
+						{
+							JOptionPane.showMessageDialog(null, "Sellers cannot have more than five sell orders unfulfilled at any time.");
 						}
-						notifyAllClients(msg.getOrder());
-						processNewOrder(msg);
+						else
+						{
+							//BR3: A single order quantity (buy or sell order) can never be lower than 10 units;
+							if(o.getNumberOfUnits() < 10)
+							{
+								JOptionPane.showMessageDialog(null, "A single order quantity (buy or sell order) can never be lower than 10 units.");
+							}
+							else
+							{
+							if(msg.getOrder().getServerOrderID() == EMPTY){
+								msg.getOrder().setServerOrderID(id++);
+							}
+							notifyAllClients(msg.getOrder());
+							processNewOrder(msg);
+							}
+						}
 					} catch (ServerException e) {
 						serverComm.sendError(msg.getSenderNickname(), e.getMessage());
 					}
@@ -217,11 +238,10 @@ public class MicroServer implements MicroTraderServer {
 	private void processNewOrder(ServerSideMessage msg) throws ServerException {
 		LOGGER.log(Level.INFO, "Processing new order...");
 
-		Order o = msg.getOrder();
-		
+	Order o = msg.getOrder();
 		// save the order on map
 		saveOrder(o);
-
+		
 		// if is buy order
 		if (o.isBuyOrder()) {
 			processBuy(msg.getOrder());
@@ -241,6 +261,7 @@ public class MicroServer implements MicroTraderServer {
 		// reset the set of changed orders
 		updatedOrders = new HashSet<>();
 
+		
 	}
 	
 	/**
@@ -265,17 +286,50 @@ public class MicroServer implements MicroTraderServer {
 	 */
 	private void processSell(Order sellOrder){
 		LOGGER.log(Level.INFO, "Processing sell order...");
-		
+		for (Entry<String, Set<Order>> entry : orderMap.entrySet()) 
+		{
+			for (Order o : entry.getValue()) 
+			{
+				if (o.isBuyOrder() && o.getStock().equals(sellOrder.getStock()) && o.getPricePerUnit() >= sellOrder.getPricePerUnit()) 
+				{
+					//BR1: Clients are not allowed to issue sell orders for their own buy orders and vice versa;
+					if(!o.getNickname().equals(sellOrder.getNickname()))
+					{
+						doTransaction (o, sellOrder);
+					}
+					else
+					{
+						JOptionPane.showMessageDialog(null, "Clients are not allowed to issue sell orders for their own buy orders and vice versa.");
+					}
+				}
+					
+			}
+		}
+	}
+	
+	
+	/**
+	 * 
+	 * @param nickname
+	 * @return
+	 */
+	
+	private int checkNumberOfUnfulfilledSellOrders(String nickname) {
+		int count_orders = 0;
 		for (Entry<String, Set<Order>> entry : orderMap.entrySet()) {
 			for (Order o : entry.getValue()) {
-				if (o.isBuyOrder() && o.getStock().equals(sellOrder.getStock()) && o.getPricePerUnit() >= sellOrder.getPricePerUnit()) {
-					doTransaction (o, sellOrder);
+				if((o.isSellOrder()) && (o.getNickname().equals(nickname)))
+				{
+					count_orders++;
+					System.out.println("Seller: " + nickname + " sell orders= " + count_orders);
 				}
 			}
 		}
+		return count_orders;
+	}	
 		
-	}
-	
+		
+
 	/**
 	 * Process the buy order
 	 * 
@@ -288,7 +342,15 @@ public class MicroServer implements MicroTraderServer {
 		for (Entry<String, Set<Order>> entry : orderMap.entrySet()) {
 			for (Order o : entry.getValue()) {
 				if (o.isSellOrder() && buyOrder.getStock().equals(o.getStock()) && o.getPricePerUnit() <= buyOrder.getPricePerUnit()) {
-					doTransaction(buyOrder, o);
+					//BR1 : Clients are not allowed to issue sell orders for their own buy orders and vice versa.
+					if(!o.getNickname().equals(buyOrder.getNickname()))
+					{
+						doTransaction (o, buyOrder);
+					}
+					else
+					{
+						JOptionPane.showMessageDialog(null, "Clients are not allowed to issue sell orders for their own buy orders and vice versa.");
+					}
 				}
 			}
 		}

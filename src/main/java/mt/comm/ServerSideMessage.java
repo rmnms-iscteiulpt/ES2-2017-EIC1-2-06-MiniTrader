@@ -33,7 +33,7 @@ public interface ServerSideMessage {
 	 * 
 	 * @return type of the message.
 	 */
-	public Type   getType();
+	public Type getType();
 
 	/**
 	 * Gets the sender nickname.

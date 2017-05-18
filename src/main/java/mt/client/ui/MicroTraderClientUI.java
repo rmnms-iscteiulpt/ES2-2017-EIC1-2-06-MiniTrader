@@ -254,7 +254,8 @@ public class MicroTraderClientUI extends javax.swing.JFrame {
 
     private void browseMessages(final Component parentComponent) {
         Logger.getLogger(this.getClass().getName()).log(Level.INFO, "Browse orders.");
-        timer = new Timer(2000, new ActionListener() {
+
+        timer = new Timer(1000, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 try {
