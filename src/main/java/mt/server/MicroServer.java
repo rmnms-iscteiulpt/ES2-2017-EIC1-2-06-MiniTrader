@@ -106,7 +106,7 @@ public class MicroServer implements MicroTraderServer {
 						verifyUserConnected(msg);
 						Order o = msg.getOrder();
 						//BR2: Sellers cannot have more than five sell orders unfulfilled at any time;
-						if(o.isSellOrder() && checkNumberOfUnfulfilledSellOrders(o.getNickname()) > 5)
+						if(o.isSellOrder() && checkNumberOfUnfulfilledSellOrders(o.getNickname()) >= 5)
 						{
 							JOptionPane.showMessageDialog(null, "Sellers cannot have more than five sell orders unfulfilled at any time.");
 						}
@@ -309,9 +309,11 @@ public class MicroServer implements MicroTraderServer {
 	
 	
 	/**
-	 * 
+	 * Check number of unfulfilled sell orders for the designated nickname
 	 * @param nickname
+	 * 		the author of the orders
 	 * @return
+	 * 		number of unfulfilled sell orders for the designated nickname
 	 */
 	
 	private int checkNumberOfUnfulfilledSellOrders(String nickname) {
