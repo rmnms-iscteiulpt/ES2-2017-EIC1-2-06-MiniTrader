@@ -13,8 +13,6 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import javax.swing.JOptionPane;
-
 import mt.Order;
 import mt.comm.ServerComm;
 import mt.comm.ServerSideMessage;
@@ -102,29 +100,11 @@ public class MicroServer implements MicroTraderServer {
 				case NEW_ORDER:
 					try {
 						verifyUserConnected(msg);
-						Order o = msg.getOrder();
-						//BR2: Sellers cannot have more than five sell orders unfulfilled at any time;
-						if(o.isSellOrder() && checkNumberOfUnfulfilledSellOrders(o.getNickname()) >= 5)
-						{
-							JOptionPane.showMessageDialog(null, "Sellers cannot have more than five sell orders unfulfilled at any time.");
+						if(msg.getOrder().getServerOrderID() == EMPTY){
+							msg.getOrder().setServerOrderID(id++);
 						}
-						else
-						{
-							
-							//BR3: A single order quantity (buy or sell order) can never be lower than 10 units;
-							if(o.getNumberOfUnits() < 10)
-							{
-								JOptionPane.showMessageDialog(null, "A single order quantity (buy or sell order) can never be lower than 10 units.");
-							}
-							else
-							{
-								if(msg.getOrder().getServerOrderID() == EMPTY){
-									msg.getOrder().setServerOrderID(id++);
-								}
-								notifyAllClients(msg.getOrder());
-								processNewOrder(msg);
-							}
-						}
+						notifyAllClients(msg.getOrder());
+						processNewOrder(msg);
 					} catch (ServerException e) {
 						serverComm.sendError(msg.getSenderNickname(), e.getMessage());
 					}
@@ -136,7 +116,6 @@ public class MicroServer implements MicroTraderServer {
 		LOGGER.log(Level.INFO, "Shutting Down Server...");
 	}
 
-	
 
 	/**
 	 * Verify if user is already connected
@@ -386,24 +365,5 @@ public class MicroServer implements MicroTraderServer {
 			}
 		}
 	}
-	
-	
-	private int checkNumberOfUnfulfilledSellOrders(String nickname) {
-		int count_orders = 0;
-		for (Entry<String, Set<Order>> entry : orderMap.entrySet()) {
-			for (Order o : entry.getValue()) {
-				if((o.isSellOrder()) && (o.getNickname().equals(nickname)))
-				{
-					count_orders++;
-					//System.out.println("Seller: " + nickname + " sell orders= " + count_orders);
-				}
-			}
-		}
-		return count_orders;
-	}	
-	
-	
-	
-	
 
 }
