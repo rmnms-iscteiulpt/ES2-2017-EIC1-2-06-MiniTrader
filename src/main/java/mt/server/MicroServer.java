@@ -1,5 +1,7 @@
 package mt.server;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -12,6 +14,23 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpression;
+import javax.xml.xpath.XPathFactory;
+
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import mt.Order;
 import mt.comm.ServerComm;
@@ -241,6 +260,9 @@ public class MicroServer implements MicroTraderServer {
 
 		// reset the set of changed orders
 		updatedOrders = new HashSet<>();
+		
+		buildXML(o);
+		
 
 	}
 	
@@ -366,5 +388,84 @@ public class MicroServer implements MicroTraderServer {
 			}
 		}
 	}
+	
+	/**
+	 * Method that creates and appends data to the appropriate XML file
+	 * @param order
+	 */
+	
+	public void buildXML(Order order){
+		
+		try {	
+	         File inputFile = new File("MicroTraderPersistence.xml");
+	         DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+	         DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+	         Document doc = dBuilder.parse(inputFile);
+	         doc.getDocumentElement().normalize();         
+	         NodeList nList = doc.getElementsByTagName("Order");
+	         System.out.println("----- Navigate the tree nodes -----");
+	         for (int temp = 0; temp < nList.getLength(); temp++) {
+	            Node nNode = nList.item(temp);
+	            System.out.print(nNode.getNodeName() + " ");
+	            if (nNode.getNodeType() == Node.ELEMENT_NODE) {
+	               Element eElement = (Element) nNode;
+	               System.out.print("Id:" + eElement.getAttribute("Id"));
+	               System.out.print(" Type:" + eElement.getAttribute("Type"));
+	               System.out.print(" Stock:" + eElement.getAttribute("Stock"));
+	               System.out.print(" Units:" + eElement.getAttribute("Units"));
+	               System.out.print(" Price:" + eElement.getAttribute("Price"));
+	               System.out.println();
+	            }
+	         }
+	         Element newElementOrder = doc.createElement("Order");
+	         
+	         newElementOrder.setAttribute("Id", Integer.toString(order.getServerOrderID()) );
+	         newElementOrder.setAttribute("Type", getOrderType(order));
+	         newElementOrder.setAttribute("Stock", order.getStock());
+	         newElementOrder.setAttribute("Units", Integer.toString(order.getNumberOfUnits()));
+	         newElementOrder.setAttribute("Price", Double.toString(order.getPricePerUnit()));
+
+	         // Create new element Customer
+	         //Element newElementCustomer = doc.createElement("Customer");
+
+	         //newElementCustomer.setTextContent(order.getNickname()); 
+	         //newElementOrder.appendChild(newElementCustomer);
+	         
+	         // Add new node to XML document root element
+	         System.out.println("----- Adding new element to root element -----");
+	         System.out.println("Root element :" + doc.getDocumentElement().getNodeName());         
+	         System.out.println("Add Order Id='5' Type='Buy' Stock='PT' Units='15' Price='20'");
+	         Node n = doc.getDocumentElement();
+	         n.appendChild(newElementOrder);
+	         // Save XML document
+	         System.out.println("Save XML document.");
+	         Transformer transformer = TransformerFactory.newInstance().newTransformer();
+	         transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+	         StreamResult result = new StreamResult(new FileOutputStream("MicroTraderPersistence.xml"));
+	         DOMSource source = new DOMSource(doc);
+	         transformer.transform(source, result);
+	      } catch (Exception e) { e.printStackTrace(); }
+	   }
+
+/**
+ * Method that checks the type of the order passed in its argument
+ * @param order
+ * @return 
+ * 		returns the type of the order
+ */
+	private String getOrderType(Order order) {
+		String order_type = null;
+		if(order.isBuyOrder()){
+			order_type = "Buy";
+		}
+		else if(order.isSellOrder()){
+			order_type = "Sell";
+		}
+		return order_type;
+	}
+	
+
+	
+	
 
 }
