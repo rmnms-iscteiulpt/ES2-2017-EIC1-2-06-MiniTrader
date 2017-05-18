@@ -392,6 +392,7 @@ public class MicroServer implements MicroTraderServer {
 	/**
 	 * Method that creates and appends data to the appropriate XML file
 	 * @param order
+	 * 		Order that will be added to the XML file 
 	 */
 	
 	public void buildXML(Order order){
