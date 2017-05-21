@@ -92,7 +92,7 @@ public class MicroServer implements MicroTraderServer {
 	@Override
 	public void start(ServerComm serverComm) {
 		serverComm.start();
-
+		
 		LOGGER.log(Level.INFO, "Starting Server...");
 
 		this.serverComm = serverComm;
@@ -100,29 +100,26 @@ public class MicroServer implements MicroTraderServer {
 		ServerSideMessage msg = null;
 		while ((msg = serverComm.getNextMessage()) != null) {
 			ServerSideMessage.Type type = msg.getType();
-
+			
 			if(type == null){
 				serverComm.sendError(null, "Type was not recognized");
 				continue;
 			}
 
 			switch (type) {
-			case CONNECTED:
-				try{
-					processUserConnected(msg);
-				}catch (ServerException e) {
-					serverComm.sendError(msg.getSenderNickname(), e.getMessage());
-				}
-				break;
-			case DISCONNECTED:
-				processUserDisconnected(msg);
-				break;
-			case NEW_ORDER:
-				try {
-					verifyUserConnected(msg);
-					if(msg.getOrder().getServerOrderID() == EMPTY)
-					{
-						msg.getOrder().setServerOrderID(id++);
+				case CONNECTED:
+					try{
+						processUserConnected(msg);
+					}catch (ServerException e) {
+						serverComm.sendError(msg.getSenderNickname(), e.getMessage());
+					}
+					break;
+				case DISCONNECTED:
+					processUserDisconnected(msg);
+					break;
+				case NEW_ORDER:
+					try {
+						verifyUserConnected(msg);
 						Order o = msg.getOrder();
 						//BR2: Sellers cannot have more than five sell orders unfulfilled at any time;
 						if(o.isSellOrder() && checkNumberOfUnfulfilledSellOrders(o.getNickname()) >= 5)
@@ -131,7 +128,6 @@ public class MicroServer implements MicroTraderServer {
 						}
 						else
 						{
-
 							//BR3: A single order quantity (buy or sell order) can never be lower than 10 units;
 							if(o.getNumberOfUnits() < 10)
 							{
@@ -139,28 +135,24 @@ public class MicroServer implements MicroTraderServer {
 							}
 							else
 							{
-								if(msg.getOrder().getServerOrderID() == EMPTY){
-									msg.getOrder().setServerOrderID(id++);
-								}
-								notifyAllClients(msg.getOrder());
-								processNewOrder(msg);
+							if(msg.getOrder().getServerOrderID() == EMPTY){
+								msg.getOrder().setServerOrderID(id++);
+							}
+							notifyAllClients(msg.getOrder());
+							processNewOrder(msg);
 							}
 						}
-						notifyAllClients(msg.getOrder());
-						processNewOrder(msg);
+					} catch (ServerException e) {
+						serverComm.sendError(msg.getSenderNickname(), e.getMessage());
 					}
+					break;
+				default:
+					break;
 				}
-				catch (ServerException e) {
-					serverComm.sendError(msg.getSenderNickname(), e.getMessage());
-				}	break;
-			default:
-				break;
-
-			}
-
-				LOGGER.log(Level.INFO, "Shutting Down Server...");
-			}
+		}
+		LOGGER.log(Level.INFO, "Shutting Down Server...");
 	}
+
 
 			private int checkNumberOfUnfulfilledSellOrders(String nickname) {
 				int count_orders = 0;
